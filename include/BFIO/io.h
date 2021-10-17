@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#include "BFIO/types.h"
+#include "BFIO/file.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +46,7 @@ extern "C" {
 #define BFIO_ERROR_ERANGE ERANGE            /* Broken pipe */
 #define BFIO_ERROR_NULL_FILE 35             /* NULL file pointer */
 #define BFIO_ERROR_EOF 36                   /* Already reach the end of file */
+#define BFIO_ERROR_NOT_OPEN_FILE 37         /* Already reach the end of file */
 #define BFIO_ERROR_UNKNOWN 255              /* Unknow error, check errno value */
 
 /**
@@ -61,21 +62,36 @@ static void BFIO_HandleError();
 BFIO_UINT8 BFIO_GetError();
 
 /**
- * Open the specified file with the specified mode
+ * Open the specified file with read and write stream
  *
  * @param filepath The file to open
- * @param mode The mode
  *
  * @return The file, NULL if error
  */
-BFIO_FILE BFIO_OpenFile(const char *filepath, const char *mode);
+BFIO_File *BFIO_OpenFile(const char *filepath);
 
 /**
  * Close the specified file
  *
  * @param file The file to close
  */
-void BFIO_CloseFile(BFIO_FILE file);
+void BFIO_CloseFile(BFIO_File *file);
+
+/**
+ * Flush the write stream
+ *
+ * @param file The file to flush
+ */
+void BFIO_FlushFile(BFIO_File *file);
+
+/**
+ * Check if the specified file is open
+ *
+ * @param file The file to check
+ *
+ * @return TRUE if the file is open, FALSE otherwise
+ */
+BFIO_BOOL BFIO_FileIsOpen(BFIO_File *file);
 
 /**
  * Read the specified size data from the specified file and put into the specified buffer
@@ -84,7 +100,7 @@ void BFIO_CloseFile(BFIO_FILE file);
  * @param buffer The buffer where to put the readed data
  * @param size The size to read
  */
-void BFIO_ReadData(BFIO_FILE file, void *buffer, BFIO_SIZE size);
+void BFIO_ReadData(BFIO_File *file, void *buffer, BFIO_SIZE size);
 
 /**
  * Write the specified size data from the specified file from into the specified buffer
@@ -93,7 +109,7 @@ void BFIO_ReadData(BFIO_FILE file, void *buffer, BFIO_SIZE size);
  * @param buffer The buffer where to find the data write
  * @param size The size to write
  */
-void BFIO_WriteData(BFIO_FILE file, void *data, BFIO_SIZE size);
+void BFIO_WriteData(BFIO_File *file, void *data, BFIO_SIZE size);
 
 /**
  * Write the specified data to the specified file
@@ -101,7 +117,7 @@ void BFIO_WriteData(BFIO_FILE file, void *data, BFIO_SIZE size);
  * @param file The file where to write
  * @param data The data to write
  */
-void BFIO_WriteBool(BFIO_FILE file, BFIO_BOOL data);
+void BFIO_WriteBool(BFIO_File *file, BFIO_BOOL data);
 
 /**
  * Write the specified data to the specified file
@@ -109,7 +125,7 @@ void BFIO_WriteBool(BFIO_FILE file, BFIO_BOOL data);
  * @param file The file where to write
  * @param data The data to write
  */
-void BFIO_WriteInt8(BFIO_FILE file, BFIO_INT8 data);
+void BFIO_WriteInt8(BFIO_File *file, BFIO_INT8 data);
 
 /**
  * Write the specified data to the specified file
@@ -117,7 +133,7 @@ void BFIO_WriteInt8(BFIO_FILE file, BFIO_INT8 data);
  * @param file The file where to write
  * @param data The data to write
  */
-void BFIO_WriteUInt8(BFIO_FILE file, BFIO_UINT8 data);
+void BFIO_WriteUInt8(BFIO_File *file, BFIO_UINT8 data);
 
 /**
  * Write the specified data to the specified file
@@ -125,7 +141,7 @@ void BFIO_WriteUInt8(BFIO_FILE file, BFIO_UINT8 data);
  * @param file The file where to write
  * @param data The data to write
  */
-void BFIO_WriteInt16(BFIO_FILE file, BFIO_INT16 data);
+void BFIO_WriteInt16(BFIO_File *file, BFIO_INT16 data);
 
 /**
  * Write the specified data to the specified file
@@ -133,7 +149,7 @@ void BFIO_WriteInt16(BFIO_FILE file, BFIO_INT16 data);
  * @param file The file where to write
  * @param data The data to write
  */
-void BFIO_WriteUInt16(BFIO_FILE file, BFIO_UINT16 data);
+void BFIO_WriteUInt16(BFIO_File *file, BFIO_UINT16 data);
 
 /**
  * Write the specified data to the specified file
@@ -141,7 +157,7 @@ void BFIO_WriteUInt16(BFIO_FILE file, BFIO_UINT16 data);
  * @param file The file where to write
  * @param data The data to write
  */
-void BFIO_WriteInt32(BFIO_FILE file, BFIO_INT32 data);
+void BFIO_WriteInt32(BFIO_File *file, BFIO_INT32 data);
 
 /**
  * Write the specified data to the specified file
@@ -149,7 +165,7 @@ void BFIO_WriteInt32(BFIO_FILE file, BFIO_INT32 data);
  * @param file The file where to write
  * @param data The data to write
  */
-void BFIO_WriteUInt32(BFIO_FILE file, BFIO_UINT32 data);
+void BFIO_WriteUInt32(BFIO_File *file, BFIO_UINT32 data);
 
 /**
  * Write the specified data to the specified file
@@ -157,7 +173,7 @@ void BFIO_WriteUInt32(BFIO_FILE file, BFIO_UINT32 data);
  * @param file The file where to write
  * @param data The data to write
  */
-void BFIO_WriteInt64(BFIO_FILE file, BFIO_INT64 data);
+void BFIO_WriteInt64(BFIO_File *file, BFIO_INT64 data);
 
 /**
  * Write the specified data to the specified file
@@ -165,7 +181,7 @@ void BFIO_WriteInt64(BFIO_FILE file, BFIO_INT64 data);
  * @param file The file where to write
  * @param data The data to write
  */
-void BFIO_WriteUInt64(BFIO_FILE file, BFIO_UINT64 data);
+void BFIO_WriteUInt64(BFIO_File *file, BFIO_UINT64 data);
 
 /**
  * Write the specified data to the specified file
@@ -173,7 +189,7 @@ void BFIO_WriteUInt64(BFIO_FILE file, BFIO_UINT64 data);
  * @param file The file where to write
  * @param data The data to write
  */
-void BFIO_WriteFloat32(BFIO_FILE file, BFIO_FLOAT32 data);
+void BFIO_WriteFloat32(BFIO_File *file, BFIO_FLOAT32 data);
 
 /**
  * Write the specified data to the specified file
@@ -181,7 +197,7 @@ void BFIO_WriteFloat32(BFIO_FILE file, BFIO_FLOAT32 data);
  * @param file The file where to write
  * @param data The data to write
  */
-void BFIO_WriteFloat64(BFIO_FILE file, BFIO_FLOAT64 data);
+void BFIO_WriteFloat64(BFIO_File *file, BFIO_FLOAT64 data);
 
 /**
  * Read the specified data from the specified file
@@ -190,7 +206,7 @@ void BFIO_WriteFloat64(BFIO_FILE file, BFIO_FLOAT64 data);
  *
  * @return The readed data
  */
-BFIO_BOOL BFIO_ReadBool(BFIO_FILE file);
+BFIO_BOOL BFIO_ReadBool(BFIO_File *file);
 
 /**
  * Read the specified data from the specified file
@@ -199,7 +215,7 @@ BFIO_BOOL BFIO_ReadBool(BFIO_FILE file);
  *
  * @return The readed data
  */
-BFIO_INT8 BFIO_ReadInt8(BFIO_FILE file);
+BFIO_INT8 BFIO_ReadInt8(BFIO_File *file);
 
 /**
  * Read the specified data from the specified file
@@ -208,7 +224,7 @@ BFIO_INT8 BFIO_ReadInt8(BFIO_FILE file);
  *
  * @return The readed data
  */
-BFIO_UINT8 BFIO_ReadUInt8(BFIO_FILE file);
+BFIO_UINT8 BFIO_ReadUInt8(BFIO_File *file);
 
 /**
  * Read the specified data from the specified file
@@ -217,7 +233,7 @@ BFIO_UINT8 BFIO_ReadUInt8(BFIO_FILE file);
  *
  * @return The readed data
  */
-BFIO_INT16 BFIO_ReadInt16(BFIO_FILE file);
+BFIO_INT16 BFIO_ReadInt16(BFIO_File *file);
 
 /**
  * Read the specified data from the specified file
@@ -226,7 +242,7 @@ BFIO_INT16 BFIO_ReadInt16(BFIO_FILE file);
  *
  * @return The readed data
  */
-BFIO_UINT16 BFIO_ReadUInt16(BFIO_FILE file);
+BFIO_UINT16 BFIO_ReadUInt16(BFIO_File *file);
 
 /**
  * Read the specified data from the specified file
@@ -235,7 +251,7 @@ BFIO_UINT16 BFIO_ReadUInt16(BFIO_FILE file);
  *
  * @return The readed data
  */
-BFIO_INT32 BFIO_ReadInt32(BFIO_FILE file);
+BFIO_INT32 BFIO_ReadInt32(BFIO_File *file);
 
 /**
  * Read the specified data from the specified file
@@ -244,7 +260,7 @@ BFIO_INT32 BFIO_ReadInt32(BFIO_FILE file);
  *
  * @return The readed data
  */
-BFIO_UINT32 BFIO_ReadUInt32(BFIO_FILE file);
+BFIO_UINT32 BFIO_ReadUInt32(BFIO_File *file);
 
 /**
  * Read the specified data from the specified file
@@ -253,7 +269,7 @@ BFIO_UINT32 BFIO_ReadUInt32(BFIO_FILE file);
  *
  * @return The readed data
  */
-BFIO_INT64 BFIO_ReadInt64(BFIO_FILE file);
+BFIO_INT64 BFIO_ReadInt64(BFIO_File *file);
 
 /**
  * Read the specified data from the specified file
@@ -262,7 +278,7 @@ BFIO_INT64 BFIO_ReadInt64(BFIO_FILE file);
  *
  * @return The readed data
  */
-BFIO_UINT64 BFIO_ReadUInt64(BFIO_FILE file);
+BFIO_UINT64 BFIO_ReadUInt64(BFIO_File *file);
 
 /**
  * Read the specified data from the specified file
@@ -271,7 +287,7 @@ BFIO_UINT64 BFIO_ReadUInt64(BFIO_FILE file);
  *
  * @return The readed data
  */
-BFIO_FLOAT32 BFIO_ReadFloat32(BFIO_FILE file);
+BFIO_FLOAT32 BFIO_ReadFloat32(BFIO_File *file);
 
 /**
  * Read the specified data from the specified file
@@ -280,7 +296,7 @@ BFIO_FLOAT32 BFIO_ReadFloat32(BFIO_FILE file);
  *
  * @return The readed data
  */
-BFIO_FLOAT64 BFIO_ReadFloat64(BFIO_FILE file);
+BFIO_FLOAT64 BFIO_ReadFloat64(BFIO_File *file);
 
 #ifdef __cplusplus
 }

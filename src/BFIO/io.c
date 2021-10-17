@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <malloc.h>
 
 #include "BFIO/io.h"
 
@@ -123,30 +124,73 @@ BFIO_UINT8 BFIO_GetError()
     return BFIO_error;
 }
 
-BFIO_FILE BFIO_OpenFile(const char *filepath, const char *mode)
+BFIO_File *BFIO_OpenFile(const char *filepath)
 {
     errno = 0;
+    BFIO_File *file = malloc(sizeof(BFIO_File));
 
-    BFIO_FILE file = fopen(filepath, mode);
+    file->_readStream = fopen(filepath, "rb");
+    file->_writeStream = fopen(filepath, "wb");
 
     BFIO_HandleError();
 
-    return file;
+    if (file->_readStream == NULL)
+    {
+        fclose(file->_readStream);
+    }
+
+    if (file->_writeStream == NULL)
+    {
+        fclose(file->_writeStream);
+    }
+
+    if (file->_readStream == NULL || file->_writeStream == NULL)
+    {
+        free(file);
+
+        return NULL;
+    }
+    else
+    {
+        file->_isOpen = BFIO_TRUE;
+
+        return file;
+    }
 }
 
-void BFIO_CloseFile(BFIO_FILE file)
+void BFIO_CloseFile(BFIO_File *file)
 {
     errno = 0;
 
-    if (file != NULL && file->_flags != 0)
+    if (file != NULL && file->_isOpen)
     {
-        fclose(file);
+        fclose(file->_readStream);
+        fclose(file->_writeStream);
+
+        file->_isOpen = BFIO_FALSE;
+
+        free(file);
 
         BFIO_HandleError();
     }
 }
 
-void BFIO_ReadData(BFIO_FILE file, void *buffer, BFIO_SIZE size)
+void BFIO_FlushFile(BFIO_File *file)
+{
+    if (file != NULL && file->_isOpen && file->_writeStream != NULL)
+    {
+        fflush(file->_writeStream);
+
+        BFIO_HandleError();
+    }
+}
+
+BFIO_BOOL BFIO_FileIsOpen(BFIO_File *file)
+{
+    return (BFIO_BOOL) (file != NULL && file->_isOpen);
+}
+
+void BFIO_ReadData(BFIO_File *file, void *buffer, BFIO_SIZE size)
 {
     errno = 0;
 
@@ -154,15 +198,19 @@ void BFIO_ReadData(BFIO_FILE file, void *buffer, BFIO_SIZE size)
     {
         BFIO_error = BFIO_ERROR_NULL_FILE;
     }
+    else if (!file->_isOpen)
+    {
+        BFIO_error = BFIO_ERROR_NOT_OPEN_FILE;
+    }
     else
     {
-        BFIO_SIZE results = fread(buffer, size, 1, file);
+        BFIO_SIZE results = fread(buffer, size, 1, file->_readStream);
 
         BFIO_HandleError();
 
         if (results < 1 && BFIO_error == BFIO_ERROR_NO)
         {
-            if (feof(file))
+            if (feof(file->_readStream))
             {
                 BFIO_error = BFIO_ERROR_EOF;
             }
@@ -170,7 +218,7 @@ void BFIO_ReadData(BFIO_FILE file, void *buffer, BFIO_SIZE size)
     }
 }
 
-void BFIO_WriteData(BFIO_FILE file, void *data, BFIO_SIZE size)
+void BFIO_WriteData(BFIO_File *file, void *data, BFIO_SIZE size)
 {
     errno = 0;
 
@@ -178,70 +226,74 @@ void BFIO_WriteData(BFIO_FILE file, void *data, BFIO_SIZE size)
     {
         BFIO_error = BFIO_ERROR_NULL_FILE;
     }
+    else if (!file->_isOpen)
+    {
+        BFIO_error = BFIO_ERROR_NOT_OPEN_FILE;
+    }
     else
     {
-        fwrite(data, size, 1, file);
+        fwrite(data, size, 1, file->_writeStream);
 
         BFIO_HandleError();
     }
 }
 
-void BFIO_WriteBool(BFIO_FILE file, BFIO_BOOL data)
+void BFIO_WriteBool(BFIO_File *file, BFIO_BOOL data)
 {
     BFIO_WriteData(file, &data, sizeof(data));
 }
 
-void BFIO_WriteInt8(BFIO_FILE file, BFIO_INT8 data)
+void BFIO_WriteInt8(BFIO_File *file, BFIO_INT8 data)
 {
     BFIO_WriteData(file, &data, sizeof(data));
 }
 
-void BFIO_WriteUInt8(BFIO_FILE file, BFIO_UINT8 data)
+void BFIO_WriteUInt8(BFIO_File *file, BFIO_UINT8 data)
 {
     BFIO_WriteData(file, &data, sizeof(data));
 }
 
-void BFIO_WriteInt16(BFIO_FILE file, BFIO_INT16 data)
+void BFIO_WriteInt16(BFIO_File *file, BFIO_INT16 data)
 {
     BFIO_WriteData(file, &data, sizeof(data));
 }
 
-void BFIO_WriteUInt16(BFIO_FILE file, BFIO_UINT16 data)
+void BFIO_WriteUInt16(BFIO_File *file, BFIO_UINT16 data)
 {
     BFIO_WriteData(file, &data, sizeof(data));
 }
 
-void BFIO_WriteInt32(BFIO_FILE file, BFIO_INT32 data)
+void BFIO_WriteInt32(BFIO_File *file, BFIO_INT32 data)
 {
     BFIO_WriteData(file, &data, sizeof(data));
 }
 
-void BFIO_WriteUInt32(BFIO_FILE file, BFIO_UINT32 data)
+void BFIO_WriteUInt32(BFIO_File *file, BFIO_UINT32 data)
 {
     BFIO_WriteData(file, &data, sizeof(data));
 }
 
-void BFIO_WriteInt64(BFIO_FILE file, BFIO_INT64 data)
+void BFIO_WriteInt64(BFIO_File *file, BFIO_INT64 data)
 {
     BFIO_WriteData(file, &data, sizeof(data));
 }
 
-void BFIO_WriteUInt64(BFIO_FILE file, BFIO_UINT64 data)
+void BFIO_WriteUInt64(BFIO_File *file, BFIO_UINT64 data)
 {
     BFIO_WriteData(file, &data, sizeof(data));
 }
 
-void BFIO_WriteFloat32(BFIO_FILE file, BFIO_FLOAT32 data)
+void BFIO_WriteFloat32(BFIO_File *file, BFIO_FLOAT32 data)
 {
     BFIO_WriteData(file, &data, sizeof(data));
 }
 
-void BFIO_WriteFloat64(BFIO_FILE file, BFIO_FLOAT64 data)
+void BFIO_WriteFloat64(BFIO_File *file, BFIO_FLOAT64 data)
 {
     BFIO_WriteData(file, &data, sizeof(data));
 }
 
-BFIO_BOOL BFIO_ReadBool(BFIO_FILE file)
+BFIO_BOOL BFIO_ReadBool(BFIO_File *file)
 {
     BFIO_BOOL results = 0;
 
@@ -250,7 +302,7 @@ BFIO_BOOL BFIO_ReadBool(BFIO_FILE file)
     return results;
 }
 
-BFIO_INT8 BFIO_ReadInt8(BFIO_FILE file)
+BFIO_INT8 BFIO_ReadInt8(BFIO_File *file)
 {
     BFIO_INT8 results = 0;
 
@@ -259,7 +311,7 @@ BFIO_INT8 BFIO_ReadInt8(BFIO_FILE file)
     return results;
 }
 
-BFIO_UINT8 BFIO_ReadUInt8(BFIO_FILE file)
+BFIO_UINT8 BFIO_ReadUInt8(BFIO_File *file)
 {
     BFIO_UINT8 results = 0;
 
@@ -268,7 +320,7 @@ BFIO_UINT8 BFIO_ReadUInt8(BFIO_FILE file)
     return results;
 }
 
-BFIO_INT16 BFIO_ReadInt16(BFIO_FILE file)
+BFIO_INT16 BFIO_ReadInt16(BFIO_File *file)
 {
     BFIO_INT16 results = 0;
 
@@ -277,7 +329,7 @@ BFIO_INT16 BFIO_ReadInt16(BFIO_FILE file)
     return results;
 }
 
-BFIO_UINT16 BFIO_ReadUInt16(BFIO_FILE file)
+BFIO_UINT16 BFIO_ReadUInt16(BFIO_File *file)
 {
     BFIO_UINT16 results = 0;
 
@@ -286,7 +338,7 @@ BFIO_UINT16 BFIO_ReadUInt16(BFIO_FILE file)
     return results;
 }
 
-BFIO_INT32 BFIO_ReadInt32(BFIO_FILE file)
+BFIO_INT32 BFIO_ReadInt32(BFIO_File *file)
 {
     BFIO_INT32 results = 0;
 
@@ -295,7 +347,7 @@ BFIO_INT32 BFIO_ReadInt32(BFIO_FILE file)
     return results;
 }
 
-BFIO_UINT32 BFIO_ReadUInt32(BFIO_FILE file)
+BFIO_UINT32 BFIO_ReadUInt32(BFIO_File *file)
 {
     BFIO_UINT32 results = 0;
 
@@ -304,7 +356,7 @@ BFIO_UINT32 BFIO_ReadUInt32(BFIO_FILE file)
     return results;
 }
 
-BFIO_INT64 BFIO_ReadInt64(BFIO_FILE file)
+BFIO_INT64 BFIO_ReadInt64(BFIO_File *file)
 {
     BFIO_INT64 results = 0;
 
@@ -313,7 +365,7 @@ BFIO_INT64 BFIO_ReadInt64(BFIO_FILE file)
     return results;
 }
 
-BFIO_UINT64 BFIO_ReadUInt64(BFIO_FILE file)
+BFIO_UINT64 BFIO_ReadUInt64(BFIO_File *file)
 {
     BFIO_UINT64 results = 0;
 
@@ -322,7 +374,7 @@ BFIO_UINT64 BFIO_ReadUInt64(BFIO_FILE file)
     return results;
 }
 
-BFIO_FLOAT32 BFIO_ReadFloat32(BFIO_FILE file)
+BFIO_FLOAT32 BFIO_ReadFloat32(BFIO_File *file)
 {
     BFIO_FLOAT32 results = 0;
 
@@ -331,7 +383,7 @@ BFIO_FLOAT32 BFIO_ReadFloat32(BFIO_FILE file)
     return results;
 }
 
-BFIO_FLOAT64 BFIO_ReadFloat64(BFIO_FILE file)
+BFIO_FLOAT64 BFIO_ReadFloat64(BFIO_File *file)
 {
     BFIO_FLOAT64 results = 0;
 

@@ -10,8 +10,9 @@
  */
 struct BFIO_File
 {
-    BFIO_FILE readStream;       /* The read stream */
-    BFIO_FILE writeStream;      /* The write stream */
+    BFIO_FILE _readStream;       /* The read stream */
+    BFIO_FILE _writeStream;      /* The write stream */
+    BFIO_BOOL _isOpen;           /* TRUE if the file is open, FALSE otherwise */
 };
 typedef struct BFIO_File BFIO_File;
 
