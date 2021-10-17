@@ -124,28 +124,19 @@ BFIO_UINT8 BFIO_GetError()
     return BFIO_error;
 }
 
-BFIO_File *BFIO_OpenFile(const char *filepath)
+BFIO_File *BFIO_OpenFile(const BFIO_STRING filepath)
 {
     errno = 0;
     BFIO_File *file = malloc(sizeof(BFIO_File));
 
     file->_readStream = fopen(filepath, "rb");
-    file->_writeStream = fopen(filepath, "wb");
 
     BFIO_HandleError();
 
     if (file->_readStream == NULL)
     {
         fclose(file->_readStream);
-    }
 
-    if (file->_writeStream == NULL)
-    {
-        fclose(file->_writeStream);
-    }
-
-    if (file->_readStream == NULL || file->_writeStream == NULL)
-    {
         free(file);
 
         return NULL;
@@ -153,6 +144,7 @@ BFIO_File *BFIO_OpenFile(const char *filepath)
     else
     {
         file->_isOpen = BFIO_TRUE;
+        file->_filepath = filepath;
 
         return file;
     }
@@ -165,7 +157,11 @@ void BFIO_CloseFile(BFIO_File *file)
     if (file != NULL && file->_isOpen)
     {
         fclose(file->_readStream);
-        fclose(file->_writeStream);
+
+        if (file->_writeStream != NULL)
+        {
+            fclose(file->_writeStream);
+        }
 
         file->_isOpen = BFIO_FALSE;
 
@@ -218,7 +214,7 @@ void BFIO_ReadData(BFIO_File *file, void *buffer, BFIO_SIZE size)
     }
 }
 
-void BFIO_WriteData(BFIO_File *file, void *data, BFIO_SIZE size)
+void BFIO_WriteData(BFIO_File *file, const void *data, BFIO_SIZE size)
 {
     errno = 0;
 
@@ -232,9 +228,21 @@ void BFIO_WriteData(BFIO_File *file, void *data, BFIO_SIZE size)
     }
     else
     {
-        fwrite(data, size, 1, file->_writeStream);
+        if (file->_writeStream == NULL)
+        {
+            file->_writeStream = fopen(file->_filepath, "wb");
 
-        BFIO_HandleError();
+            fseek(file->_readStream, 0, SEEK_SET);
+
+            BFIO_HandleError();
+        }
+
+        if (file->_writeStream != NULL)
+        {
+            fwrite(data, size, 1, file->_writeStream);
+
+            BFIO_HandleError();
+        }
     }
 }
 

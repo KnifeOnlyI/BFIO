@@ -68,7 +68,7 @@ BFIO_UINT8 BFIO_GetError();
  *
  * @return The file, NULL if error
  */
-BFIO_File *BFIO_OpenFile(const char *filepath);
+BFIO_File *BFIO_OpenFile(const BFIO_STRING filepath);
 
 /**
  * Close the specified file
@@ -109,7 +109,7 @@ void BFIO_ReadData(BFIO_File *file, void *buffer, BFIO_SIZE size);
  * @param buffer The buffer where to find the data write
  * @param size The size to write
  */
-void BFIO_WriteData(BFIO_File *file, void *data, BFIO_SIZE size);
+void BFIO_WriteData(BFIO_File *file, const void *data, BFIO_SIZE size);
 
 /**
  * Write the specified data to the specified file

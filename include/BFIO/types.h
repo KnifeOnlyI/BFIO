@@ -8,6 +8,7 @@ extern "C" {
 #define BFIO_BOOL char
 #define BFIO_INT8 signed char
 #define BFIO_UINT8 unsigned char
+#define BFIO_CHAR char
 #define BFIO_INT16 signed short
 #define BFIO_UINT16 unsigned short
 #define BFIO_INT32 signed int
@@ -16,6 +17,7 @@ extern "C" {
 #define BFIO_UINT64 unsigned long
 #define BFIO_FLOAT32 float
 #define BFIO_FLOAT64 double
+#define BFIO_STRING BFIO_CHAR *
 
 #define BFIO_SIZE size_t
 
